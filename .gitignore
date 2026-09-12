@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+twcs.csv
+amazon_tweets.csv
+amazon_pairs.csv
+sample.csv
+.ipynb_checkpoints/
