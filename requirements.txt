@@ -1,6 +1,6 @@
-flask==3.0.3
-scikit-learn==1.5.2
-joblib==1.4.2
-numpy==2.1.1
-google-genai==0.6.0
-python-dotenv==1.0.1
+streamlit
+scikit-learn
+joblib
+numpy
+google-genai
+python-dotenv

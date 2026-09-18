@@ -168,16 +168,5 @@ Vercel's serverless architecture is not well-suited for Streamlit's persistent s
 
 <div align="center">
 
-Built with ⚙️ classical ML and 🧠 contextual reasoning — because not every ticket needs a language model, but every ticket deserves the right one.
-
-</div>
-## ?? Web Deployment
-
-`ash
-# Deploy to Vercel
-vercel login
-vercel --prod
-`
-
 Set GEMINI_API_KEY in Vercel dashboard before deploying.
 
