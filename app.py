@@ -1,20 +1,20 @@
-from flask import Flask, request, jsonify
-from dotenv import load_dotenv
-import joblib
-import re
-import html
-import string
-import numpy as np
 import os
+import re
+import string
+import html
+import numpy as np
+import joblib
+from google import genai
+from dotenv import load_dotenv
+from flask import Flask, request, jsonify, send_file
 
 load_dotenv()
 
-app = Flask(__name__, static_folder='public', static_url_path='')
+app = Flask(__name__, static_folder='static', static_url_path='')
 
 api_key = os.getenv('GEMINI_API_KEY', '')
 client = None
 if api_key:
-    from google import genai
     client = genai.Client(api_key=api_key)
 
 logreg_pipeline = None
@@ -45,7 +45,7 @@ def clean_text(text):
 
 @app.route('/')
 def index():
-    return app.send_static_file('index.html')
+    return send_file('public/index.html')
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
@@ -88,6 +88,3 @@ def analyze():
         'decision': 'ESCALATE_TO_HUMAN' if confidence < 0.70 else 'AUTO_HANDLE',
         'reply': reply
     })
-
-if __name__ == '__main__':
-    app.run(debug=True, port=int(os.getenv('PORT', 8080)))

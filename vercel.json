@@ -1,6 +1,13 @@
 {
   "version": 2,
+  "public": {
+    "sourceFiles": ["index.html", "app.py", "requirements.txt"]
+  },
   "builds": [
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    },
     {
       "src": "app.py",
       "use": "@vercel/python"
@@ -8,8 +15,16 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/api/analyze",
       "dest": "app.py"
+    },
+    {
+      "src": "/",
+      "dest": "index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "index.html"
     }
   ]
 }
