@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "public": {
-    "sourceFiles": ["index.html", "app.py", "requirements.txt"]
-  },
   "builds": [
     {
       "src": "index.html",
@@ -17,10 +14,6 @@
     {
       "src": "/api/analyze",
       "dest": "app.py"
-    },
-    {
-      "src": "/",
-      "dest": "index.html"
     },
     {
       "src": "/(.*)",
