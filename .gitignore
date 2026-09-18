@@ -1,3 +1,5 @@
+build
+
 .env
 __pycache__/
 *.pyc
@@ -6,4 +8,6 @@ amazon_tweets.csv
 amazon_pairs.csv
 sample.csv
 .ipynb_checkpoints/
-streamlit_app.py
+*.db
+*.db-shm
+*.db-wal
