@@ -49,36 +49,30 @@ def index():
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
+    tweet = ''
     try:
         data = request.get_json(force=True, silent=True)
-        if data is None:
-            data = {}
-    except Exception:
-        data = {}
-    
-    tweet = data.get('message', '')
+        if data:
+            tweet = str(data.get('message', ''))
+    except:
+        pass
     
     if not tweet:
-        return jsonify({'error': 'No message provided'})
+        return jsonify({'intent': 'general_inquiry', 'confidence': 0.0, 'handler': 'Error', 'decision': 'ERROR', 'reply': 'Please provide a message.'})
     
     if logreg_pipeline is None:
-        return jsonify({'error': 'Model not found'})
+        return jsonify({'intent': 'general_inquiry', 'confidence': 0.0, 'handler': 'Model Not Loaded', 'decision': 'ERROR', 'reply': 'Model not found.'})
     
     try:
         cleaned = clean_text(tweet)
         processed = cleaned.split()
         
         if not processed:
-            return jsonify({'error': 'Empty message',
-            intent': 'general_inquiry',
-            'confidence': 0.5,
-            'handler': 'Default',
-            'decision': 'AUTO_HANDLE',
-            'reply': 'Please provide a valid message. ^AMZ'})
+            return jsonify({'intent': 'general_inquiry', 'confidence': 0.5, 'handler': 'Default', 'decision': 'AUTO_HANDLE', 'reply': 'Please provide a valid message. ^AMZ'})
         
         probs = logreg_pipeline.predict_proba([processed])[0]
-        best_idx = np.argmax(probs)
-        intent = logreg_pipeline.classes_[best_idx]
+        best_idx = int(np.argmax(probs))
+        intent = str(logreg_pipeline.classes_[best_idx])
         confidence = float(probs[best_idx])
         
         handler = "Logistic Regression (Tier 1)"
@@ -90,19 +84,21 @@ def analyze():
             try:
                 response = client.models.generate_content(
                     model='gemini-2.5-flash',
-                    contents=f'Draft a short Amazon support reply ending with ^AMZ: {tweet}'
+                    contents='Draft a short Amazon support reply (max 2 sentences) ending with ^AMZ: ' + tweet
                 )
-                if response and response.text:
-                    reply = response.text.strip()
-            except:
+                if response and hasattr(response, 'text') and response.text:
+                    reply = str(response.text).strip()
+            except Exception:
                 pass
+        
+        decision = 'ESCALATE_TO_HUMAN' if confidence < 0.70 else 'AUTO_HANDLE'
         
         return jsonify({
             'intent': intent,
             'confidence': confidence,
             'handler': handler,
-            'decision': 'ESCALATE_TO_HUMAN' if confidence < 0.70 else 'AUTO_HANDLE',
+            'decision': decision,
             'reply': reply
         })
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return jsonify({'intent': 'general_inquiry', 'confidence': 0.0, 'handler': 'Error', 'decision': 'ERROR', 'reply': 'An error occurred. Please try again.'})

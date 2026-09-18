@@ -183,43 +183,32 @@
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                    showError('Server error: ' + response.status);
+                    return;
                 }
 
                 const data = await response.json();
-                if (data.error) {
-                    throw new Error(data.error);
+                
+                if (data.intent === undefined || data.confidence === undefined) {
+                    showError('Invalid response from server.');
+                    return;
                 }
-                displayResult(data);
+
+                document.getElementById('decisionBadge').textContent = data.decision || 'UNKNOWN';
+                document.getElementById('decisionBadge').className = 'badge ' + 
+                    ((data.decision || '').includes('ESCALATE') ? 'badge-escalate' : 'badge-auto');
+                document.getElementById('handler').textContent = data.handler || 'Unknown';
+                document.getElementById('intent').textContent = data.intent || 'Unknown';
+                document.getElementById('confidence').textContent = ((data.confidence || 0) * 100).toFixed(1) + '%';
+                document.getElementById('replyCard').textContent = data.reply || 'Please DM us your order ID. ^AMZ';
+
+                resultSection.classList.add('visible');
             } catch (err) {
-                showError(err.message || 'Analysis failed. Please try again.');
+                showError('Error: ' + err.message);
             } finally {
                 analyzeBtn.disabled = false;
                 analyzeBtn.textContent = 'Analyze & Draft Response';
             }
-        }
-
-        function displayResult(data) {
-            const resultSection = document.getElementById('resultSection');
-            const errorDiv = document.getElementById('error');
-
-            document.getElementById('decisionBadge').textContent = data.decision;
-            document.getElementById('decisionBadge').className = 'badge ' + 
-                (data.decision.includes('ESCALATE') ? 'badge-escalate' : 'badge-auto');
-            document.getElementById('handler').textContent = data.handler || 'Unknown';
-            document.getElementById('intent').textContent = data.intent || 'Unknown';
-            document.getElementById('confidence').textContent = (data.confidence * 100).toFixed(1) + '%';
-            document.getElementById('replyCard').textContent = data.reply || 'Please DM us your order ID. ^AMZ';
-
-            errorDiv.classList.remove('visible');
-            resultSection.classList.add('visible');
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('visible');
         }
     </script>
 </body>
