@@ -66,12 +66,12 @@ if st.button("Analyze & Draft Response", type="primary", use_container_width=Tru
         with st.spinner("Processing triage..."):
             # Preprocess
             cleaned = clean_text(user_tweet)
-            processed = cleaned.split()
+            processed = " ".join(cleaned.split())
             
             if not processed:
                 st.error("Empty message after preprocessing.")
             else:
-                # Predict
+                # Predict (TF-IDF expects string, not list)
                 probs = logreg_pipeline.predict_proba([processed])[0]
                 best_idx = np.argmax(probs)
                 intent = logreg_pipeline.classes_[best_idx]
