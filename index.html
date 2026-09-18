@@ -115,7 +115,6 @@
             display: none;
         }
         .error.visible { display: block; }
-        .loading { text-align: center; padding: 20px; color: #9ca3af; }
     </style>
 </head>
 <body>
@@ -182,18 +181,8 @@
                     body: JSON.stringify({ message: message })
                 });
 
-                if (!response.ok) {
-                    showError('Server error: ' + response.status);
-                    return;
-                }
-
                 const data = await response.json();
                 
-                if (data.intent === undefined || data.confidence === undefined) {
-                    showError('Invalid response from server.');
-                    return;
-                }
-
                 document.getElementById('decisionBadge').textContent = data.decision || 'UNKNOWN';
                 document.getElementById('decisionBadge').className = 'badge ' + 
                     ((data.decision || '').includes('ESCALATE') ? 'badge-escalate' : 'badge-auto');
