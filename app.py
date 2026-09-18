@@ -58,26 +58,32 @@ def analyze():
         pass
     
     if not tweet:
-        return jsonify({'intent': 'general_inquiry', 'confidence': 0.0, 'handler': 'Error', 'decision': 'ERROR', 'reply': 'Please provide a message.'})
+        return jsonify({'error': 'No message provided'})
     
     if logreg_pipeline is None:
-        return jsonify({'intent': 'general_inquiry', 'confidence': 0.0, 'handler': 'Model Not Loaded', 'decision': 'ERROR', 'reply': 'Model not found.'})
+        return jsonify({'error': 'Model not loaded'})
     
     try:
         cleaned = clean_text(tweet)
         processed = cleaned.split()
         
         if not processed:
-            return jsonify({'intent': 'general_inquiry', 'confidence': 0.5, 'handler': 'Default', 'decision': 'AUTO_HANDLE', 'reply': 'Please provide a valid message. ^AMZ'})
+            return jsonify({
+                'intent': 'general_inquiry',
+                'confidence': 0.5,
+                'handler': 'Default',
+                'decision': 'AUTO_HANDLE',
+                'reply': 'Please provide a valid message. ^AMZ'
+            })
         
         probs = logreg_pipeline.predict_proba([processed])[0]
         best_idx = int(np.argmax(probs))
         intent = str(logreg_pipeline.classes_[best_idx])
         confidence = float(probs[best_idx])
         
-        handler = "Logistic Regression (Tier 1)"
+        handler_name = "Logistic Regression (Tier 1)"
         if confidence < 0.70 and client:
-            handler = "Gemini 2.5 Flash (Tier 2)"
+            handler_name = "Gemini 2.5 Flash (Tier 2)"
         
         reply = "Please DM us your order ID. ^AMZ"
         if client:
@@ -88,7 +94,7 @@ def analyze():
                 )
                 if response and hasattr(response, 'text') and response.text:
                     reply = str(response.text).strip()
-            except Exception:
+            except:
                 pass
         
         decision = 'ESCALATE_TO_HUMAN' if confidence < 0.70 else 'AUTO_HANDLE'
@@ -96,9 +102,9 @@ def analyze():
         return jsonify({
             'intent': intent,
             'confidence': confidence,
-            'handler': handler,
+            'handler': handler_name,
             'decision': decision,
             'reply': reply
         })
     except Exception as e:
-        return jsonify({'intent': 'general_inquiry', 'confidence': 0.0, 'handler': 'Error', 'decision': 'ERROR', 'reply': 'An error occurred. Please try again.'})
+        return jsonify({'error': str(e)})
