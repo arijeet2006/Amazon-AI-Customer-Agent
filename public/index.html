@@ -181,8 +181,29 @@
                     body: JSON.stringify({ message: message })
                 });
 
-                const data = await response.json();
+                console.log('Response status:', response.status);
                 
+                if (!response.ok) {
+                    showError('Server returned status: ' + response.status);
+                    return;
+                }
+
+                const responseText = await response.text();
+                console.log('Response body:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    showError('Invalid JSON response from server.');
+                    return;
+                }
+
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
                 document.getElementById('decisionBadge').textContent = data.decision || 'UNKNOWN';
                 document.getElementById('decisionBadge').className = 'badge ' + 
                     ((data.decision || '').includes('ESCALATE') ? 'badge-escalate' : 'badge-auto');
@@ -193,7 +214,8 @@
 
                 resultSection.classList.add('visible');
             } catch (err) {
-                showError('Error: ' + err.message);
+                console.error('Error:', err);
+                showError('Network error: ' + err.message);
             } finally {
                 analyzeBtn.disabled = false;
                 analyzeBtn.textContent = 'Analyze & Draft Response';
