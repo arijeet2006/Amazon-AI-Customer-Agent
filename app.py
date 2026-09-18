@@ -4,17 +4,17 @@ import string
 import html
 import numpy as np
 import joblib
-from google import genai
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_file
 
 load_dotenv()
 
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__)
 
 api_key = os.getenv('GEMINI_API_KEY', '')
 client = None
 if api_key:
+    from google import genai
     client = genai.Client(api_key=api_key)
 
 logreg_pipeline = None
@@ -45,46 +45,64 @@ def clean_text(text):
 
 @app.route('/')
 def index():
-    return send_file('public/index.html')
+    return send_file('index.html')
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
-    data = request.get_json()
+    try:
+        data = request.get_json(force=True, silent=True)
+        if data is None:
+            data = {}
+    except Exception:
+        data = {}
+    
     tweet = data.get('message', '')
     
     if not tweet:
-        return jsonify({'error': 'No message provided'}), 400
+        return jsonify({'error': 'No message provided'})
     
     if logreg_pipeline is None:
-        return jsonify({'error': 'Model not found'}), 500
+        return jsonify({'error': 'Model not found'})
     
-    cleaned = clean_text(tweet)
-    processed = cleaned.split()
-    
-    probs = logreg_pipeline.predict_proba([processed])[0]
-    best_idx = np.argmax(probs)
-    intent = logreg_pipeline.classes_[best_idx]
-    confidence = float(probs[best_idx])
-    
-    handler = "Logistic Regression (Tier 1)"
-    if confidence < 0.70 and client:
-        handler = "Gemini 2.5 Flash (Tier 2)"
-    
-    reply = "Please DM us your order ID. ^AMZ"
-    if client:
-        try:
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=f'Draft a short, polite Amazon support reply (1-2 sentences) ending with ^AMZ: {tweet}'
-            )
-            reply = response.text.strip()
-        except:
-            pass
-    
-    return jsonify({
-        'intent': intent,
-        'confidence': confidence,
-        'handler': handler,
-        'decision': 'ESCALATE_TO_HUMAN' if confidence < 0.70 else 'AUTO_HANDLE',
-        'reply': reply
-    })
+    try:
+        cleaned = clean_text(tweet)
+        processed = cleaned.split()
+        
+        if not processed:
+            return jsonify({'error': 'Empty message',
+            intent': 'general_inquiry',
+            'confidence': 0.5,
+            'handler': 'Default',
+            'decision': 'AUTO_HANDLE',
+            'reply': 'Please provide a valid message. ^AMZ'})
+        
+        probs = logreg_pipeline.predict_proba([processed])[0]
+        best_idx = np.argmax(probs)
+        intent = logreg_pipeline.classes_[best_idx]
+        confidence = float(probs[best_idx])
+        
+        handler = "Logistic Regression (Tier 1)"
+        if confidence < 0.70 and client:
+            handler = "Gemini 2.5 Flash (Tier 2)"
+        
+        reply = "Please DM us your order ID. ^AMZ"
+        if client:
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=f'Draft a short Amazon support reply ending with ^AMZ: {tweet}'
+                )
+                if response and response.text:
+                    reply = response.text.strip()
+            except:
+                pass
+        
+        return jsonify({
+            'intent': intent,
+            'confidence': confidence,
+            'handler': handler,
+            'decision': 'ESCALATE_TO_HUMAN' if confidence < 0.70 else 'AUTO_HANDLE',
+            'reply': reply
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)})
