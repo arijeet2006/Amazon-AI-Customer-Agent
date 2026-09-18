@@ -86,3 +86,16 @@ When tested against an evaluation set of real-world ambiguous customer inquiries
     Gemini 2.5 Flash: Achieves 100.0% accuracy by resolving sarcasm, unstated intentions, and implicit customer problems.
 
     Hybrid Two-Tier Setup: Retains 100% effective accuracy while routing the majority of clear-cut queries locally without API overhead.
+
+
+---
+
+## ?? Deploying to Vercel
+
+1. Install Vercel CLI: 
+pm install -g vercel
+2. Set environment variable GEMINI_API_KEY in Vercel dashboard
+3. Deploy: ercel --prod
+
+Note: Vercel deployment requires additional Streamlit server configuration. For best results, consider using a serverless wrapper or Vercel's Python runtime with custom startup script.
+

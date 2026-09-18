@@ -1,0 +1,4 @@
+# Streamlit deployment for Vercel
+# Reference: https://github.com/streamlit/streamlit/wiki/Deploying-Streamlit-Apps
+
+streamlit_app: app.py
